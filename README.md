@@ -12,7 +12,7 @@ enseignante de l'UE par des étudiants du Master 2 SPE :
 </ul>
 <br>C'est un <b>prototype</b> visant à démontrer les capacités d'exploration et visualisation de données statistiques avec Python (3.10). 
 Il nécessite des améliorations pour une utilisation en production. 
-Le code source est disponible sur le [github de l'enseignante](https://github.com/cplumejeaud/innatio), sous licence Affero GPL v3.
+Le code source est disponible sur le github de l'enseignante(https://github.com/cplumejeaud/innatio), sous licence Affero GPL v3.
                 
 # Allure de l'application : 
 ![Interface_Web](./Interface_Web.png)
@@ -29,8 +29,8 @@ Accès au fichier en téléchargement ![ici](https://www.data.gouv.fr/datasets/r
 Les scripts comportent **des erreurs et il manque des étapes**, et la conception de la **BDD n'est pas optimisée** au niveau taille. Donc on n'a pas gardé dans github le script SQL de restauration de la base. Dans le schéma poisson_dina les élèves trouvent les deux tables qu'utilise la webapp : `inat_nat_epci_region` et `nat_etrg_par_epci`
 
 <table><tr>
-<td>[inat_nat_epci_region]("savoie - poisson_aurelie - inat_nat_epci_region.png")</td>
-<td>[nat_etrg_par_epci]("savoie - poisson_dina - nat_etrg_par_epci.png")</td>
+<td>![inat_nat_epci_region](./"savoie - poisson_aurelie - inat_nat_epci_region.png")</td>
+<td>![nat_etrg_par_epci](./"savoie - poisson_dina - nat_etrg_par_epci.png")</td>
 </tr></table>
 
 1) Créer l'utilisateur dédié
