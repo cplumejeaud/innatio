@@ -12,7 +12,7 @@ enseignante de l'UE par des étudiants du Master 2 SPE :
 </ul>
 <br>C'est un <b>prototype</b> visant à démontrer les capacités d'exploration et visualisation de données statistiques avec Python (3.10). 
 Il nécessite des améliorations pour une utilisation en production. 
-Le code source est disponible sur le github de l'enseignante(https://github.com/cplumejeaud/innatio), sous licence Affero GPL v3.
+Le code source est disponible sur le github de l'enseignante (https://github.com/cplumejeaud/innatio), sous licence Affero GPL v3.
                 
 # Allure de l'application : 
 ![Interface_Web](./Interface_Web.png)
