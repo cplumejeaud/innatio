@@ -29,8 +29,8 @@ Accès au fichier en téléchargement ![ici](https://www.data.gouv.fr/datasets/r
 Les scripts comportent **des erreurs et il manque des étapes**, et la conception de la **BDD n'est pas optimisée** au niveau taille. Donc on n'a pas gardé dans github le script SQL de restauration de la base. Dans le schéma poisson_dina les élèves trouvent les deux tables qu'utilise la webapp : `inat_nat_epci_region` et `nat_etrg_par_epci`
 
 <table><tr>
-<td>![inat_nat_epci_region](./"savoie - poisson_aurelie - inat_nat_epci_region.png")</td>
-<td>![nat_etrg_par_epci](./"savoie - poisson_dina - nat_etrg_par_epci.png")</td>
+<td>![inat_nat_epci_region](./savoie - poisson_aurelie - inat_nat_epci_region.png)</td>
+<td>![nat_etrg_par_epci](./savoie - poisson_dina - nat_etrg_par_epci.png)</td>
 </tr></table>
 
 1) Créer l'utilisateur dédié
@@ -155,6 +155,7 @@ créer un mapping sur votre fournisseur de DNS : CNAME avec romarin.huma-num.fr.
 Une vérification s'impose : pour apache2, quel WSGI va s'exécuter ?
 
 `source py310-venv/bin/activate`
+
 `mod_wsgi-express module-config`
 ```sh
 LoadModule wsgi_module "/home/cperreau/insee/webapp/py310-venv/lib/python3.10/site-packages/mod_wsgi/server/mod_wsgi-py310.cpython-310-x86_64-linux-gnu.so"
@@ -185,10 +186,12 @@ Il faut reporter ces infos dans le fichier de config **innatio.conf** ci-dessous
 
 ```
 
-`sudo a2ensite innatio` Pour démarrer la webapp
-`sudo a2dissite innatio` Pour retirer la webapp
+Pour démarrer la webapp : `sudo a2ensite innatio` 
+
+Pour retirer la webapp : `sudo a2dissite innatio` 
 
 `sudo systemctl reload apache2` pour recharger la config et le code de la Webapp
+
 `sudo systemctl restart apache2.service` pour stopper/redémarrer apache2
 
 `sudo systemctl status apache2.service` : état du service Apache2
