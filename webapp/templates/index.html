@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cartographie des nationalités (par pays de naissance) en 2021</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  </head>
+  <body>
+    <div class="container mt-4">
+      <h1>Cartographie des nationalités (calculées par pays de naissance) en 2021</h1>
+      <p>Vue consolidée des données sur les nationalités de l'INSEE, recensement 2021.</p>
+      <p class="card-text text-muted small"> Les données de petits effectifs (moins que 16) sont assimilées à 0. Les EPCI à cheval sur plusieurs régions disparaissent (pour l'instant : c'est un bug !).</p>
+      <div class="row">
+        <div class="col-lg-6 mb-4">
+          <!-- Map fragment: nationalités par EPCI -->
+          {{ map_block|safe }}
+        </div>
+
+        <div class="col-lg-6 mb-4">
+          <!-- Map fragment: carte régionale (ancien mon_graphique) -->
+          {{ mon_block|safe }}
+        </div>
+      </div>
+
+      <div class="row mt-3">
+        <div class="col-lg-6 mb-4">
+          <!-- Info section bottom-left -->
+          <div class="card">
+            <div class="card-body">
+              <h3 class="mb-3">À propos de cette application</h3>
+              <p class="card-text">
+                Cette application propose une visualisation interactive des données de population étrangère en France. 
+                Elle a été développée dans le cadre du <i>Master 2 SPE à La Rochelle, UE Data to Information</i>, en décembre 2025, avec l'aide de <a href="https://gresco.labo.univ-poitiers.fr/membres/araujo-dina/">Dina Santos-Araujo</a>
+                et sous la responsabilité de <a href="https://migrinter.cnrs.fr/membres/christine-plumejeaud-perreau/">Christine Plumejeaud-Perreau</a>, 
+                enseignante de l'UE par des étudiants du Master 2 SPE : 
+                <ul>
+                  <li>Gustave Jouis,</li>
+                  <li>Julia Mourgues,</li>
+                  <li>Aurélie Henry.</li>
+                </ul>
+                <br>C'est un <b>prototype</b> visant à démontrer les capacités d'exploration et visualisation de données statistiques avec Python (3.10). 
+                Il nécessite des améliorations pour une utilisation en production. Le code source est disponible sur le github de l'enseignante, sous licence Affero GPL v3.
+              </p>
+              <p class="card-text text-muted small">
+                Vous pouvez explorer les données par nationalité (déterminée ici par le pays de naissance de personnes non françaises de naissance), par région, ou par EPCI (Établissement Public de Coopération Intercommunale), c'est-à-dire par intercommunalité.
+                Les cartes et graphiques se mettent à jour en temps réel selon vos sélections.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6 mb-4">
+          <!-- Histogram fragment bottom-right -->
+          {{ histo_block|safe }}
+        </div>
+      </div>
+
+      <hr />
+      <p class="text-muted">Liens rapides :</p>
+      <ul>
+        <li><a href="/cartes/nationalites_epci">Carte : Nationalités par EPCI (page dédiée)</a></li>
+        <li><a href="/app_carte_region/">Carte : Régions (page dédiée)</a></li>
+        <li><a href="/histogrammes/histo_nat">Histogramme des nationalités (page dédiée)</a></li>
+      </ul>
+    </div>
+  </body>
+</html>
