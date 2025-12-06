@@ -29,8 +29,8 @@ Accès au fichier en téléchargement ![ici](https://www.data.gouv.fr/datasets/r
 Les scripts comportent **des erreurs et il manque des étapes**, et la conception de la **BDD n'est pas optimisée** au niveau taille. Donc on n'a pas gardé dans github le script SQL de restauration de la base. Dans le schéma poisson_dina les élèves trouvent les deux tables qu'utilise la webapp : `inat_nat_epci_region` et `nat_etrg_par_epci`
 
 <table><tr>
-<td>![inat_nat_epci_region](./savoie - poisson_aurelie - inat_nat_epci_region.png)</td>
-<td>![nat_etrg_par_epci](./savoie - poisson_dina - nat_etrg_par_epci.png)</td>
+<td><img src="./savoie - poisson_aurelie - inat_nat_epci_region.png"/></td>
+<td><img src="./savoie - poisson_dina - nat_etrg_par_epci.png"/></td>
 </tr></table>
 
 1) Créer l'utilisateur dédié
