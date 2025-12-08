@@ -12,7 +12,8 @@ bp = Blueprint('carte_region', __name__, template_folder='templates', static_fol
 
 # Charger les données
 #data = gpd.read_file(r"C:\Users\info\Desktop\Dev\data_etrangers.geojson")
-data = gpd.read_file(r"./data_etrangers.geojson")
+DATA_PATH = os.path.join(os.path.dirname(__file__), 'data_etrangers.geojson')
+data = gpd.read_file(DATA_PATH)
 
 # Liste des régions
 regions = data['region_name'].unique().tolist()
@@ -70,4 +71,5 @@ if __name__ == '__main__':
     from flask import Flask
     _app = Flask(__name__, template_folder='templates', static_folder='static')
     _app.register_blueprint(bp)
+
     _app.run(debug=True)
