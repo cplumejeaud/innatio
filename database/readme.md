@@ -47,7 +47,7 @@ Task 'PostgreSQL dump' finished at Wed Apr 15 19:18:16 CEST 2026
 
 ### Explications
 
-![Vue graphique des tables (produite avec DBEaver)]("./inseedb - imhana2021.png" "Diagramme des tables du schema imhana2021")
+![Vue graphique des tables (produite avec DBEaver)](./inseedb%20-%20imhana2021.png "Diagramme des tables du schema imhana2021")
 
 - indicateurs :
 Tous les indicateurs disponibles et croisées avec la nationalité des résidents (source RP 2021 sur CASD)
