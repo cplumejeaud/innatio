@@ -65,7 +65,7 @@ si indicateur est un croisement AGER_SEXE par exemple, alors code01 = AGER, et c
 	- immigres : le nombre de ceux nés étrangers à l'étranger
 	
 - basicfusion_epci : 
-	liste pour toutes les EPCI et pour les indicateurs et pour toutes les nationalités présentes (191) 
+	liste pour toutes les EPCI et pour les indicateurs et pour toutes les nationalités présentes (195) 
 	les comptes de cette nationalité suivant: 
 	- Ensemble : immigré ou pas, naturalisé ou pas
 	- Etranger : déclarent une nationalité non française au recensement
