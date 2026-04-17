@@ -10,32 +10,39 @@ import pandas.io.sql as sql
 from sqlalchemy import create_engine, text
 import os
 pd.options.mode.chained_assignment = None  # default='warn'
+import platform
 
-os.chdir('C:\Travail\Enseignement\Cours_M2_python\\2025\Projet_INSEE\Insee\database')
+prgpath = '/home/cperreau/insee/database'
+datapath = "/home/cperreau/imhana/export_CASD_ergonomiques/2026.01.22/EPCI/"
+if platform.system() == 'Windows':
+    prgpath = 'C:\Travail\Enseignement\Cours_M2_python\\2025\Projet_INSEE\Insee\database'
+    datapath = r"C:\Travail\MIGRINTER\Labo\IMHANA\Méthodologie\Statistiques\export_CASD_ergonomiques\\2026.01.22\EPCI\\"
 
-datapath = r"C:\Travail\MIGRINTER\Labo\IMHANA\Méthodologie\Statistiques\export_CASD_ergonomiques\\2026.01.22\EPCI\\"
-suffix = "_2026.01.22.csv"
+os.chdir(prgpath)
+
 epcisuffix = "_EPCI_2026.01.22.csv"
-# - NAT_EPCI_2026.01.22.csv
-# - INAT_NAT_EPCI_2026.01.22.csv
-# - GEN2_NAT_EPCI_2026.01.22.csv
-# - IMMI_NAT_EPCI_2026.01.22.csv
+
 
 EPT_Paris = ['200057867','200057875','200057941','200057966','200057974','200057982','200057990','200058006','200058014','200058097','200058790']
 EPCI_fictives = ['HORS__GFP', 'RESTANT__GFP', 'fictive_200027399', 'fictive_242320034', 'fictive_242320059', 'fictive_244701389']
+STRANGERS = ['Etranger', 'Français par acquisition']
 
 nationalites_speciales = ['Tous', 'etrangers', 'francaisParAcquisition', 'immigres']
 liste_natio = pd.read_csv('liste_nationalites.csv')['nationalites'].tolist()
+FRENCH_DOMTOM = pd.read_csv('FRENCH_DOMTOM.csv', sep=';', encoding='utf-8', dtype={'FRENCH_DOMTOM':str})['FRENCH_DOMTOM'].tolist()
 
 doublons_CC_EPCI = pd.read_csv('doublons_CC_EPCI.csv', sep=';', encoding='utf-8', dtype={'doublons_CC_EPCI':str})['doublons_CC_EPCI'].tolist()
 doublons_CA_CU_EPCI = pd.read_csv('doublons_CA_CU_EPCI.csv', sep=';', encoding='utf-8', dtype={'doublons_CA_CU_EPCI':str})['doublons_CA_CU_EPCI'].tolist()
 print(doublons_CC_EPCI)
 print(doublons_CA_CU_EPCI)
 
-STRANGERS = ['Etranger', 'Français par acquisition']
-FRENCH_DOMTOM = pd.read_csv('FRENCH_DOMTOM.csv', sep=';', encoding='utf-8', dtype={'FRENCH_DOMTOM':str})['FRENCH_DOMTOM'].tolist()
+doublons_COM = pd.read_csv('doublons_COMMUNES.csv', sep=';', encoding='utf-8', dtype={'doublons_COMMUNES':str})['doublons_COMMUNES'].tolist()
+print(doublons_COM)
 
-CODESEP = '.' #séparateir entre le code et les modalité d'un indicateur (SEXE.Féminin par exemple)
+
+CODESEP = '.' #séparateur entre le code et les modalité d'un indicateur (SEXE.Féminin par exemple)
+
+
 
 def process_NAT_EPCI_first():
     '''
@@ -51,7 +58,7 @@ def process_NAT_EPCI_first():
     demographie_etrangers = pd.read_csv(nat_epci_file, sep=';', encoding='latin1')
     demographie_etrangers['unit'] = demographie_etrangers['unit'].astype(str)
     
-    demo01 = demographie_etrangers.query(" NAT2 not in @nationalites_speciales and not(unit in @EPCI_fictives) and not(unit in @doublons_CC_EPCI) and not(unit in @doublons_CA_CU_EPCI) ").pivot(index=['unit', 'NOM'], columns='NAT2', values='total_s')
+    demo01 = demographie_etrangers.query(" NAT2 not in @nationalites_speciales  and not(unit in @doublons_CC_EPCI) and not(unit in @doublons_CA_CU_EPCI) ").pivot(index=['unit', 'NOM'], columns='NAT2', values='total_s')
     demo02 = demographie_etrangers.query(" NAT2 not in @nationalites_speciales and (unit in @doublons_CC_EPCI) ").pivot_table(index=['unit', 'NOM'], columns='NAT2', values='total_s',aggfunc="max") 
     demo03 = demographie_etrangers.query(" NAT2 not in @nationalites_speciales and (unit in @doublons_CA_CU_EPCI) ").pivot_table(index=['unit', 'NOM'], columns='NAT2', values='total_s',aggfunc="sum") 
 
@@ -96,7 +103,7 @@ def process_INAT_EPCI():
     demographie_etrangers = pd.read_csv(nat_epci_file, sep=';', encoding='latin1')
     demographie_etrangers['unit'] = demographie_etrangers['unit'].astype(str)
     
-    demo01 = demographie_etrangers.query(" NAT2 not in @nationalites_speciales and not(unit in @EPCI_fictives) and not(unit in @doublons_CC_EPCI) and not(unit in @doublons_CA_CU_EPCI) ").pivot(index=['unit', 'NOM', 'NAT2'], columns='INAT_BIS', values='total_s')
+    demo01 = demographie_etrangers.query(" NAT2 not in @nationalites_speciales  and not(unit in @doublons_CC_EPCI) and not(unit in @doublons_CA_CU_EPCI) ").pivot(index=['unit', 'NOM', 'NAT2'], columns='INAT_BIS', values='total_s')
     demo02 = demographie_etrangers.query(" NAT2 not in @nationalites_speciales and (unit in @doublons_CC_EPCI) ").pivot_table(index=['unit', 'NOM', 'NAT2'], columns='INAT_BIS', values='total_s',aggfunc="max") 
     demo03 = demographie_etrangers.query(" NAT2 not in @nationalites_speciales and (unit in @doublons_CA_CU_EPCI) ").pivot_table(index=['unit', 'NOM', 'NAT2'], columns='INAT_BIS', values='total_s',aggfunc="sum") 
         
@@ -125,7 +132,7 @@ def process_GEN2_NAT_EPCI():
     demographie_etrangers = pd.read_csv(nat_epci_file, sep=';', encoding='latin1')
     demographie_etrangers['unit'] = demographie_etrangers['unit'].astype(str)
 
-    demo01 = demographie_etrangers.query(" NAT2 not in @nationalites_speciales and not(unit in @EPCI_fictives) and not(unit in @doublons_CC_EPCI) and not(unit in @doublons_CA_CU_EPCI) ").pivot(index=['unit', 'NOM', 'NAT2'], columns='GENERATION2', values='total_s')
+    demo01 = demographie_etrangers.query(" NAT2 not in @nationalites_speciales  and not(unit in @doublons_CC_EPCI) and not(unit in @doublons_CA_CU_EPCI) ").pivot(index=['unit', 'NOM', 'NAT2'], columns='GENERATION2', values='total_s')
     demo02 = demographie_etrangers.query(" NAT2 not in @nationalites_speciales and (unit in @doublons_CC_EPCI) ").pivot_table(index=['unit', 'NOM', 'NAT2'], columns='GENERATION2', values='total_s',aggfunc="max") 
     demo03 = demographie_etrangers.query(" NAT2 not in @nationalites_speciales and (unit in @doublons_CA_CU_EPCI) ").pivot_table(index=['unit', 'NOM', 'NAT2'], columns='GENERATION2', values='total_s',aggfunc="sum") 
         
@@ -156,7 +163,7 @@ def process_IMMI_NAT_EPCI():
     demographie_etrangers = pd.read_csv(nat_epci_file, sep=';', encoding='latin1')
     demographie_etrangers['unit'] = demographie_etrangers['unit'].astype(str)
 
-    demo01 = demographie_etrangers.query(" NAT2 not in @nationalites_speciales and not(unit in @EPCI_fictives) and not(unit in @doublons_CC_EPCI) and not(unit in @doublons_CA_CU_EPCI) ").pivot(index=['unit', 'NOM', 'NAT2'], columns='IMMI', values='total_s')
+    demo01 = demographie_etrangers.query(" NAT2 not in @nationalites_speciales  and not(unit in @doublons_CC_EPCI) and not(unit in @doublons_CA_CU_EPCI) ").pivot(index=['unit', 'NOM', 'NAT2'], columns='IMMI', values='total_s')
     demo02 = demographie_etrangers.query(" NAT2 not in @nationalites_speciales and (unit in @doublons_CC_EPCI) ").pivot_table(index=['unit', 'NOM', 'NAT2'], columns='IMMI', values='total_s',aggfunc="max") 
     demo03 = demographie_etrangers.query(" NAT2 not in @nationalites_speciales and (unit in @doublons_CA_CU_EPCI) ").pivot_table(index=['unit', 'NOM', 'NAT2'], columns='IMMI', values='total_s',aggfunc="sum") 
         
@@ -175,14 +182,14 @@ def process_IMMI_NAT_EPCI():
     return result
 
 def process_niveau1_EPCI_first(variable = 'SEXE'):
-    nat_epci_file = datapath+variable+"_NAT_EPCI"+suffix
+    nat_epci_file = datapath+variable+"_NAT"+epcisuffix
     #nat_epci_file = r"C:\Travail\MIGRINTER\Labo\IMHANA\Méthodologie\Statistiques\export_CASD_ergonomiques\\2026.01.22\EPCI\NAT_EPCI_2026.01.22.csv"
 
     demographie_etrangers = pd.read_csv(nat_epci_file, sep=';', encoding='latin1')
     demographie_etrangers['unit'] = demographie_etrangers['unit'].astype(str)
 
     # passer en large pour gérer les doublons
-    demo01 = demographie_etrangers.query("NAT2 not in @nationalites_speciales and not(unit in @EPCI_fictives) and not(unit in @doublons_CC_EPCI) and not(unit in @doublons_CA_CU_EPCI) ").pivot(index=['unit', 'NOM', variable], columns='NAT2', values='total_s')
+    demo01 = demographie_etrangers.query("NAT2 not in @nationalites_speciales  and not(unit in @doublons_CC_EPCI) and not(unit in @doublons_CA_CU_EPCI) ").pivot(index=['unit', 'NOM', variable], columns='NAT2', values='total_s')
     demo02 = demographie_etrangers.query("NAT2 not in @nationalites_speciales and (unit in @doublons_CC_EPCI) ").pivot_table(index=['unit', 'NOM', variable], columns='NAT2', values='total_s',aggfunc="max") 
     demo03 = demographie_etrangers.query("NAT2 not in @nationalites_speciales and (unit in @doublons_CA_CU_EPCI) ").pivot_table(index=['unit', 'NOM', variable], columns='NAT2', values='total_s',aggfunc="sum") 
 
@@ -222,14 +229,14 @@ def process_niveau1_EPCI_correspondances(croix= 'GEN2', variable='SEXE') :
     # croix = 'GEN2'
     correspondances = {'INAT':'INAT_BIS', 'GEN2' : 'GENERATION2', 'IMMI' : 'IMMI'}
 
-    nat_epci_file = datapath+variable+"_"+croix+"_NAT_EPCI"+suffix
+    nat_epci_file = datapath+variable+"_"+croix+"_NAT"+epcisuffix
     #nat_epci_file = r"C:\Travail\MIGRINTER\Labo\IMHANA\Méthodologie\Statistiques\export_CASD_ergonomiques\\2026.01.22\EPCI\NAT_EPCI_2026.01.22.csv"
 
     demographie_etrangers = pd.read_csv(nat_epci_file, sep=';', encoding='latin1')
     demographie_etrangers['unit'] = demographie_etrangers['unit'].astype(str)
 
     #unit == '248500191' and  
-    demo01 = demographie_etrangers.query("NAT2 not in @nationalites_speciales and not(unit in @EPCI_fictives) and not(unit in @doublons_CC_EPCI) and not(unit in @doublons_CA_CU_EPCI) ").pivot(index=['unit', 'NOM', 'NAT2', variable], columns=correspondances[croix], values='total_s')
+    demo01 = demographie_etrangers.query("NAT2 not in @nationalites_speciales  and not(unit in @doublons_CC_EPCI) and not(unit in @doublons_CA_CU_EPCI) ").pivot(index=['unit', 'NOM', 'NAT2', variable], columns=correspondances[croix], values='total_s')
     demo02 = demographie_etrangers.query("NAT2 not in @nationalites_speciales and (unit in @doublons_CC_EPCI) ").pivot_table(index=['unit', 'NOM', 'NAT2', variable], columns=correspondances[croix], values='total_s',aggfunc="max") 
     demo03 = demographie_etrangers.query("NAT2 not in @nationalites_speciales and (unit in @doublons_CA_CU_EPCI) ").pivot_table(index=['unit', 'NOM', 'NAT2', variable], columns=correspondances[croix], values='total_s',aggfunc="sum") 
 
@@ -348,7 +355,7 @@ def process_niveau1_EPCI(variable = 'SEXE'):
     les tables créés (autant que de variables, soit 24) doivent ensuite être supprimées.
     DEPRECATED 
     '''
-    nat_epci_file = datapath+variable+"_NAT_EPCI"+suffix
+    nat_epci_file = datapath+variable+"_NAT"+epcisuffix
     #nat_epci_file = r"C:\Travail\MIGRINTER\Labo\IMHANA\Méthodologie\Statistiques\export_CASD_ergonomiques\\2026.01.22\EPCI\NAT_EPCI_2026.01.22.csv"
 
     demographie_etrangers = pd.read_csv(nat_epci_file, sep=';', encoding='latin1')
@@ -390,9 +397,9 @@ def process_niveau1_EPCI(variable = 'SEXE'):
     return database
 
 
-def save_to_database(df, table_name, schema_name='imhana_epci'):
+def save_to_database(df, table_name, schema_name='imhana'):
 
-    engine = create_engine('postgresql://postgres:postgres@localhost:5432/inseedb', connect_args={'options': '-csearch_path={}'.format('imhana_epci,public')})
+    engine = create_engine('postgresql://postgres:postgres@localhost:5432/inseedb', connect_args={'options': '-csearch_path={}'.format('imhana,public')})
     ORM_conn=engine.connect()
     df.to_sql(table_name, con=ORM_conn , schema=schema_name, if_exists='replace', index=False)
     ORM_conn.commit()
@@ -402,8 +409,8 @@ def save_to_database(df, table_name, schema_name='imhana_epci'):
     # df.to_sql(table_name, con=engine , schema=schema_name, if_exists='replace', index=False)
     # engine.dispose()
 
-def append_to_database(df, table_name, schema_name='imhana_epci'):
-    engine = create_engine('postgresql://postgres:postgres@localhost:5432/inseedb', connect_args={'options': '-csearch_path={}'.format('imhana_epci,public')})
+def append_to_database(df, table_name, schema_name='imhana'):
+    engine = create_engine('postgresql://postgres:postgres@localhost:5432/inseedb', connect_args={'options': '-csearch_path={}'.format('imhana,public')})
     df.to_sql(table_name, con=engine , schema=schema_name, if_exists='append', index=False)
     engine.dispose()
 
@@ -416,7 +423,7 @@ def add_columns_to_nat_epci(df, variable = 'sexe'):
     pour rajouter la colonne d'un indicateur sur une ligne correspondant à une nationalité
     DEPRECATED (repose sur l'existence de la table nat_epci qui décrit l'ensemble des indicateurs pour 'Ensemble')
     '''
-    engine = create_engine('postgresql://postgres:postgres@localhost:5432/inseedb', connect_args={'options': '-csearch_path={}'.format('imhana_epci,public')})
+    engine = create_engine('postgresql://postgres:postgres@localhost:5432/inseedb', connect_args={'options': '-csearch_path={}'.format('imhana,public')})
     ORM_conn=engine.connect()
     sql_query = ''
     attlist = []
@@ -512,8 +519,8 @@ def fusion_EPCI_NAT2() :
     #Réordonner les colonnes pour mettre toutes les variantes de français à la fin (quitte à les laisser tomber...)
     basic_colonnes = ['unit', 'NAT2', 'anneeRp', 'indicateur', 'indicateurCode', 'indicateurMode', 'Ensemble', 'Etranger', 'Français par acquisition', 'Français de naissance', 'SecondeGeneration', 'Immigrés']
     #fusion = fusion[basic_colonnes + [col for col in fusion.columns if col not in basic_colonnes]]
-    #save_to_database(fusion[basic_colonnes + [col for col in fusion.columns if col not in basic_colonnes]], 'fusion_epci', 'imhana_epci')
-    save_to_database(fusion[basic_colonnes], 'nat_epci_long', 'imhana_epci')
+    #save_to_database(fusion[basic_colonnes + [col for col in fusion.columns if col not in basic_colonnes]], 'fusion_epci', 'imhana')
+    save_to_database(fusion[basic_colonnes], 'nat_epci_long', 'imhana')
 
 def fusion_EPCI_niveau1(variable = 'SEXE') : 
     '''
@@ -545,8 +552,8 @@ def fusion_EPCI_niveau1(variable = 'SEXE') :
     #Réordonner les colonnes pour mettre toutes les variantes de français à la fin (quitte à les laisser tomber...)
     basic_colonnes = ['unit', 'NAT2', 'anneeRp', 'indicateur', 'indicateurCode', 'indicateurMode', 'Ensemble', 'Etranger', 'Français par acquisition', 'Français de naissance', 'SecondeGeneration', 'Immigrés']
     #fusion = fusion[basic_colonnes + [col for col in fusion.columns if col not in basic_colonnes]]
-    #append_to_database(fusion[basic_colonnes + [col for col in fusion.columns if col not in basic_colonnes]], 'fusion_epci', 'imhana_epci')
-    append_to_database(fusion[basic_colonnes], 'nat_epci_long', 'imhana_epci')
+    #append_to_database(fusion[basic_colonnes + [col for col in fusion.columns if col not in basic_colonnes]], 'fusion_epci', 'imhana')
+    append_to_database(fusion[basic_colonnes], 'nat_epci_long', 'imhana')
     
     
 def summary_NAT_EPCI (variable=None):
@@ -557,17 +564,17 @@ def summary_NAT_EPCI (variable=None):
     nat_epci_file = datapath+"NAT"+epcisuffix
 
     if variable :
-        nat_epci_file = datapath+variable+"_NAT_EPCI"+suffix
+        nat_epci_file = datapath+variable+"_NAT"+epcisuffix
 
     demographie_etrangers = pd.read_csv(nat_epci_file, sep=';', encoding='latin1')
     demographie_etrangers['unit'] = demographie_etrangers['unit'].astype(str)
 
     if variable is None:     
-        demo01 = demographie_etrangers.query("NAT2 in @nationalites_speciales and not(unit in @EPCI_fictives) and not(unit in @doublons_CC_EPCI) and not(unit in @doublons_CA_CU_EPCI) ").pivot(index=['unit', 'NOM'], columns='NAT2', values='total_s')
+        demo01 = demographie_etrangers.query("NAT2 in @nationalites_speciales  and not(unit in @doublons_CC_EPCI) and not(unit in @doublons_CA_CU_EPCI) ").pivot(index=['unit', 'NOM'], columns='NAT2', values='total_s')
         demo02 = demographie_etrangers.query("NAT2 in @nationalites_speciales and (unit in @doublons_CC_EPCI) ").pivot_table(index=['unit', 'NOM'], columns='NAT2', values='total_s',aggfunc="max") 
         demo03 = demographie_etrangers.query("NAT2 in @nationalites_speciales and (unit in @doublons_CA_CU_EPCI) ").pivot_table(index=['unit', 'NOM'], columns='NAT2', values='total_s',aggfunc="sum") 
     else: 
-        demo01 = demographie_etrangers.query("NAT2 in @nationalites_speciales and not(unit in @EPCI_fictives) and not(unit in @doublons_CC_EPCI) and not(unit in @doublons_CA_CU_EPCI) ").pivot(index=['unit', 'NOM', variable], columns='NAT2', values='total_s')
+        demo01 = demographie_etrangers.query("NAT2 in @nationalites_speciales  and not(unit in @doublons_CC_EPCI) and not(unit in @doublons_CA_CU_EPCI) ").pivot(index=['unit', 'NOM', variable], columns='NAT2', values='total_s')
         demo02 = demographie_etrangers.query("NAT2 in @nationalites_speciales and (unit in @doublons_CC_EPCI) ").pivot_table(index=['unit', 'NOM', variable], columns='NAT2', values='total_s',aggfunc="max") 
         demo03 = demographie_etrangers.query("NAT2 in @nationalites_speciales and (unit in @doublons_CA_CU_EPCI) ").pivot_table(index=['unit', 'NOM', variable], columns='NAT2', values='total_s',aggfunc="sum") 
 
@@ -599,57 +606,281 @@ def summary_NAT_EPCI (variable=None):
     
     # Présuppose qu'on a d'abord appelé la fonction sans variable...
     if variable :
-        append_to_database(result, 'resumes_nat_epci_long', 'imhana_epci')
+        append_to_database(result, 'resumes_nat_epci_long', 'imhana')
     else : 
-        save_to_database(result, 'resumes_nat_epci_long', 'imhana_epci')
+        save_to_database(result, 'resumes_nat_epci_long', 'imhana')
 
     return  result
 
+def process_NAT_COM_first():
+    '''
+    appelé par fusion_COM_NAT2 pour initialiser la table nat_com_long avec les totaux ('Ensemble') de nationalité par unité (les communes)
+    Doit être appelé en premier car définit les colonnes anneeRp, indicateur, indicateurCode, indicateurMode
+    La nationalité NAT2 est recodée : elle prend pour valeur NAT (nationalité actuelle) ou NATN si l'individu a été naturalisé français. 
+    Ce qui fait que les comptes Ensemble définissent la somme des personnes d'origine d'une nationalité, qu'ils soient encore de cette nationalité, ou bien aient été naturalisés français. 
+    '''
+    #datapath = r"C:\Travail\MIGRINTER\Labo\IMHANA\Méthodologie\Statistiques\export_CASD_ergonomiques\\2026.01.22\commune\\"
+    #epcisuffix = "_COM_2026.01.22.csv"
+
+    nat_epci_file = datapath+"NAT"+epcisuffix
+    #"C:\Travail\MIGRINTER\Labo\IMHANA\Méthodologie\Statistiques\export_CASD_ergonomiques\2026.01.22\commune\NAT_COM_2026.01.22.csv"
+
+    demographie_etrangers = pd.read_csv(nat_epci_file, sep=';', encoding='latin1')
+    demographie_etrangers['unit'] = demographie_etrangers['unit'].astype(str)
+
+    demo01 = demographie_etrangers.query("NAT2 not in @nationalites_speciales and not(unit in @doublons_COM) ").pivot(index=['unit', 'NOM'], columns='NAT2', values='total_s')
+    demo02 = demographie_etrangers.query("NAT2 not in @nationalites_speciales and (unit in @doublons_COM) ").pivot_table(index=['unit', 'NOM'], columns='NAT2', values='total_s',aggfunc="max") 
+
+    frames = [demo01, demo02]
+
+    result = pd.concat(frames) #2132 rows × 4 columns
+    result.fillna(0, inplace=True)
+    result.rename_axis(columns=None, inplace=True)
+    result.reset_index(inplace=True)
+
+    print(result.columns)
+    print(result.shape) #(2132, 197)
+
+    database = result.melt(id_vars=['unit', 'NOM'], value_vars=liste_natio, var_name='NAT2', value_name='Ensemble')
+    database = database.astype(dtype = {'unit': 'string', 'NOM': 'string', 'NAT2': 'string', 'Ensemble': 'int'})
+
+    print(database.shape) #(416130, 4)
+    print(database.columns) #['unit', 'NOM', 'NAT2', 'Ensemble']
+
+    database['anneeRp']  = 2021
+    database['indicateur']  = 'NAT2'+CODESEP
+    database['indicateurCode']  = 'NAT2'
+    database['indicateurMode']  = ''
+    #Retirer la colonne NOM
+    return database[['unit', 'anneeRp', 'indicateur', 'indicateurCode', 'indicateurMode', 'NAT2', 'Ensemble']]
+
+def process_COM_correspondances(croix= 'GEN2', variable='SEXE') :
+    # variable = 'SEXE'
+    # croix = 'GEN2'
+    correspondances = {'INAT':'INAT_BIS', 'GEN2' : 'GENERATION2', 'IMMI' : 'IMMI'}
+
+    nat_epci_file = datapath+croix+"_NAT"+epcisuffix
+    if (variable) : 
+        nat_epci_file = datapath+variable+"_"+croix+"_NAT"+epcisuffix
+    #nat_epci_file = r"C:\Travail\MIGRINTER\Labo\IMHANA\Méthodologie\Statistiques\export_CASD_ergonomiques\\2026.01.22\EPCI\NAT_EPCI_2026.01.22.csv"
+
+    demographie_etrangers = pd.read_csv(nat_epci_file, sep=';', encoding='latin1')
+    demographie_etrangers['unit'] = demographie_etrangers['unit'].astype(str)
+
+    if (variable) : 
+        demo01 = demographie_etrangers.query("NAT2 not in @nationalites_speciales  and not(unit in @doublons_COM)  ").pivot(index=['unit', 'NOM', 'NAT2', variable], columns=correspondances[croix], values='total_s')
+        demo02 = demographie_etrangers.query("NAT2 not in @nationalites_speciales and (unit in @doublons_COM) ").pivot_table(index=['unit', 'NOM', 'NAT2', variable], columns=correspondances[croix], values='total_s',aggfunc="max") 
+    else : 
+        demo01 = demographie_etrangers.query("NAT2 not in @nationalites_speciales  and not(unit in @doublons_COM)  ").pivot(index=['unit', 'NOM', 'NAT2'], columns=correspondances[croix], values='total_s')
+        demo02 = demographie_etrangers.query("NAT2 not in @nationalites_speciales and (unit in @doublons_COM) ").pivot_table(index=['unit', 'NOM', 'NAT2'], columns=correspondances[croix], values='total_s',aggfunc="max") 
+        
+    frames = [demo01, demo02]
+    result = pd.concat(frames)
+    result.fillna(0, inplace=True)
+    result.rename_axis(columns=None, inplace=True)
+    result.reset_index(inplace=True)
+
+    if variable : 
+        # renommer la colonne variable par indicateurMode 
+        result.rename(columns={variable : 'indicateurMode'}, inplace=True)
+        if (croix == 'INAT') :
+            #Rajouter une colonne Français de naissance
+            result['Français de naissance'] = result[FRENCH_DOMTOM].sum(axis=1)
+            #Réordonner les colonnes, et retirer NOM
+            result = result[['unit', 'NAT2', 'indicateurMode', 'Etranger', 'Français par acquisition', 'Français de naissance'] + [col for col in result.columns if col not in ['unit', 'NOM', 'NAT2', 'indicateurMode', 'Etranger', 'Français par acquisition', 'Français de naissance']]]
+        if (croix ==  'GEN2') : 
+            #Attention, petite cuisine malhonnète ici : Immigrés vaut normalement 'PremiereGeneration'
+            result.rename(columns={True:'SecondeGeneration', False:'Immigrés'}, inplace=True)
+            # retirer NOM des colonnes
+            result = result[['unit', 'NAT2', 'indicateurMode', 'SecondeGeneration', 'Immigrés'] ]#PremiereGeneration 
+            # bricolage car IMMI n'est pas croisé avec les variables de niveau 1 et Immigrés = PremiereGeneration
+        if (croix ==  'IMMI') : 
+            # retirer NOM des colonnes
+            result = result[['unit', 'NAT2', 'indicateurMode', 'Immigrés', 'Non immigrés'] ]
+    else : 
+        
+        if (croix == 'INAT') :
+            #Rajouter une colonne Français de naissance
+            result['Français de naissance'] = result[FRENCH_DOMTOM].sum(axis=1)
+            #Réordonner les colonnes, et retirer NOM
+            result = result[['unit', 'NAT2',  'Etranger', 'Français par acquisition', 'Français de naissance'] + [col for col in result.columns if col not in ['unit', 'NOM', 'NAT2', 'Etranger', 'Français par acquisition', 'Français de naissance']]]
+        if (croix ==  'GEN2') : 
+            #Attention, petite cuisine malhonnète ici : Immigrés vaut normalement 'PremiereGeneration'
+            result.rename(columns={True:'SecondeGeneration', False:'Immigrés'}, inplace=True)
+            # retirer NOM des colonnes
+            result = result[['unit', 'NAT2',  'SecondeGeneration', 'Immigrés'] ]#PremiereGeneration 
+            # bricolage car IMMI n'est pas croisé avec les variables de niveau 1 et Immigrés = PremiereGeneration
+        if (croix ==  'IMMI') : 
+            # retirer NOM des colonnes
+            result = result[['unit', 'NAT2', 'Immigrés', 'Non immigrés'] ]
+    print(result.columns)
+    print(result.shape) #(157960, 18)
+
+    return result
+
+
+def fusion_COM_NAT2() : 
+    '''
+    Pour chaque unité, et chaque modalité de la variable passée en paramètre, on calcule les comptes par nationalité et par sous-ensembles :
+    'Ensemble', 'Etranger', 'Français par acquisition', 'Français de naissance', 'SecondeGeneration', 'Immigrés'
+    On créé la table nat_com_long
+    '''
+    
+    df = process_NAT_COM_first()
+    df2 = process_COM_correspondances('INAT',None)
+    df3 = process_COM_correspondances('GEN2',None)
+
+    fusion = pd.merge(df, df2, on=['unit', 'NAT2'], how='left') 
+    fusion = pd.merge(fusion, df3, on=['unit', 'NAT2'], how='left') 
+
+    fusion.fillna(0, inplace=True)
+    print(f"Taille de fusion is {fusion.shape}")
+    #Typer toutes les colonnes comme des entiers
+    map_columnsTypes = {'Etranger': 'int', 'Français par acquisition': 'int', 'Français de naissance': 'int', 'SecondeGeneration' : 'int', 'Immigrés' : 'int'}
+    for f in FRENCH_DOMTOM:
+        map_columnsTypes[f] = 'int'
+    #print(map_columnsTypes)
+    fusion = fusion.astype(dtype = map_columnsTypes)
+
+    # Souvent les effectifs de seconde génération sont anonymisés et pas première génération. Ce calcul permet d'avoir un chiffre plus précis
+    # fusion.SecondeGeneration = fusion.Ensemble - fusion.PremiereGeneration
+    # Contre les lois de l'anonymat (effectifs à moins de 16 possible)
+
+    #Réordonner les colonnes pour mettre toutes les variantes de français à la fin (quitte à les laisser tomber...)
+    basic_colonnes = ['unit', 'NAT2', 'anneeRp', 'indicateur', 'indicateurCode', 'indicateurMode', 'Ensemble', 'Etranger', 'Français par acquisition', 'Français de naissance', 'SecondeGeneration', 'Immigrés']
+    #fusion = fusion[basic_colonnes + [col for col in fusion.columns if col not in basic_colonnes]]
+    #save_to_database(fusion[basic_colonnes + [col for col in fusion.columns if col not in basic_colonnes]], 'fusion_epci', 'imhana')
+    save_to_database(fusion[basic_colonnes], 'nat_com_long', 'imhana')
+    
+    
+def summary_NAT_COM (variable=None):
+    #datapath = r"C:\Travail\MIGRINTER\Labo\IMHANA\Méthodologie\Statistiques\export_CASD_ergonomiques\\2026.01.22\EPCI\\"
+    #epcisuffix = "_EPCI_2026.01.22.csv"
+    #nationalites_speciales = ['Tous', 'etrangers', 'francaisParAcquisition', 'immigres']
+    #EPCI_fictives = ['HORS__GFP', 'RESTANT__GFP', 'fictive_200027399', 'fictive_242320034', 'fictive_242320059', 'fictive_244701389']
+    nat_epci_file = datapath+"NAT"+epcisuffix
+
+    if variable :
+        nat_epci_file = datapath+variable+"_NAT"+epcisuffix
+
+    demographie_etrangers = pd.read_csv(nat_epci_file, sep=';', encoding='latin1')
+    demographie_etrangers['unit'] = demographie_etrangers['unit'].astype(str)
+
+    if variable is None:     
+        demo01 = demographie_etrangers.query("NAT2 in @nationalites_speciales and not(unit in @doublons_COM) ").pivot(index=['unit', 'NOM'], columns='NAT2', values='total_s')
+        demo02 = demographie_etrangers.query("NAT2 in @nationalites_speciales and (unit in @doublons_COM) ").pivot_table(index=['unit', 'NOM'], columns='NAT2', values='total_s',aggfunc="max") 
+    else: 
+        demo01 = demographie_etrangers.query("NAT2 in @nationalites_speciales  and not(unit in @doublons_COM) ").pivot(index=['unit', 'NOM', variable], columns='NAT2', values='total_s')
+        demo02 = demographie_etrangers.query("NAT2 in @nationalites_speciales and (unit in @doublons_COM) ").pivot_table(index=['unit', 'NOM', variable], columns='NAT2', values='total_s',aggfunc="max") 
+
+    frames = [demo01, demo02]
+
+    result = pd.concat(frames)
+    result.rename_axis(columns=None, inplace=True)
+    result.reset_index(inplace=True)
+    result.fillna(0, inplace=True)
+
+    if variable :
+        result.rename(columns={variable : 'indicateurMode'}, inplace=True)
+        result = result.astype(dtype = {'indicateurMode': 'string'})  
+    else : 
+        result['indicateurMode']  = ''
+        
+    print(result.columns) #['unit', 'NOM', 'indicateurMode', 'Tous', 'etrangers', 'francaisParAcquisition','immigres']
+    print(result.shape) #(1224, 6) ou (1224, 7) si variable
+
+    result = result.astype(dtype = {'unit': 'string', 'NOM': 'string', 'Tous': 'int', 'etrangers': 'int', 'francaisParAcquisition': 'int', 'immigres': 'int'})   
+    result['anneeRp']  = 2021
+    result['indicateur']  = 'NAT2'+CODESEP
+    result['indicateurCode']  =  'NAT2' if variable is None else variable
+    if variable :
+        result['indicateur'] = result['indicateurCode']+CODESEP+result['indicateurMode']
+    # Réordonner les colonnes et garder la colonne NOM
+    # (ainsi, il y a au moins une table non géographique qui garde le lien entre code unité et nom de la commune. pour l'année du recensement)    
+    result = result[['unit', 'NOM', 'anneeRp', 'indicateur', 'indicateurCode', 'indicateurMode', 'Tous', 'etrangers', 'francaisParAcquisition','immigres']]
+    
+    # Présuppose qu'on a d'abord appelé la fonction sans variable...
+    if variable :
+        append_to_database(result, 'resumes_nat_com_long', 'imhana')
+    else : 
+        save_to_database(result, 'resumes_nat_com_long', 'imhana')
+
+    return  result
+
+#########################################################################
+#### Version 1 de la base en long (les nationalités dans la colonne NAT2, les indicateurs dans la colonne indicateur), 
+# décomposés en ligne suivant Ensemble, Etranger, Français par acquisition, Français de naissance, SecondeGénération, Immigrés
+#########################################################################
+
+""" 
+ici = 'faire la table nat_com_long'
+print(ici)
+fusion_COM_NAT2() #initialise la table nat_com_long de taille 416130 lignes
+
+
+datapath = r"C:\Travail\MIGRINTER\Labo\IMHANA\Méthodologie\Statistiques\export_CASD_ergonomiques\\2026.01.22\commune\\"
+epcisuffix = "_COM_2026.01.22.csv"
+
+ici = 'résumés des individus communes'
+print(ici)
+
+summary_NAT_COM()
+
 """
+ici = 'faire la table nat_epci_long'
+print(ici)
+
 fusion_EPCI_NAT2() #initialise la table nat_epci_long
 colonnes =  [ 'SEXE', 'DIPLR', 'POSP', 'CATPR', 'IRANR',  'LTEXC', 'MODTRANS', 'AGER','STAT', 'STATCONJ', 'TACT', 'IMMI',  'ARRIVR']
 # mises de côté car beaucoup de modalités : 'LRANE', 'COMMUNE_RESIDANTER', 'NAT3', 'DEPT_NAIS', 'DENSITE7_RESID', 'DENSITE7_RESIDANTER', 'DENSITE7_TRAV', 'LTEXD' , 'LNAIE',
 for var in colonnes:
     #Ajoute les lignes pour l'indicateur dans nat_epci_long
     df = fusion_EPCI_niveau1(variable = var)
-"""
 
-"""
+
+
 ici = 'résumés des individus'
+print(ici)
 
 summary_NAT_EPCI()
 colonnes =  [ 'SEXE', 'DIPLR', 'POSP', 'CATPR', 'IRANR',  'LTEXC', 'MODTRANS', 'AGER','STAT', 'STATCONJ', 'TACT', 'IMMI',  'ARRIVR']
 for var in colonnes:
     #Ajoute les lignes pour l'indicateur dans resumes_nat_epci_long
     df = summary_NAT_EPCI(variable = var)
-"""
-
-"""
-ici = 'logements'    
 
 
-datapath = r"C:\Travail\MIGRINTER\Labo\IMHANA\Méthodologie\Statistiques\export_CASD_ergonomiques\\2026.01.22\EPCI\logement\\"
+ici = 'ajouter les logements et leurs résumés'    
+print(ici)
+
+if platform.system() == 'Windows':
+    datapath = r"C:\Travail\MIGRINTER\Labo\IMHANA\Méthodologie\Statistiques\export_CASD_ergonomiques\\2026.01.22\EPCI\logement\\"
+else : 
+    datapath = '/home/cperreau/imhana/export_CASD_ergonomiques/2026.01.22/EPCI/logement/'
+#datapath  = os.path.join(datapath, 'logement')
 colonnes = ['ACHLR', 'HLML',  'INPER', 'INPOM', 'INPSM', 'NBPIR', 'NPER',  'STOCD', 'SURF', 'TYPL', 'VOIT' ]
 # Rappel : Dina a recodé les variables INPER, INPOM, INPSM et NPER en 5 modalités : 0 pers, 1 pers, 2 pers, 3 pers, 4 pers, 5 pers ou plus.
 for var in colonnes:
     #Ajoute les lignes pour l'indicateur dans nat_epci_long
     fusion_EPCI_niveau1(variable = var)
     summary_NAT_EPCI(variable = var)
-"""
 
+"""
 ## DEPRECATED
 #df = process_niveau1_EPCI(variable = 'INAT')
-#save_to_database(df, 'nat_epci_INAT', 'imhana_epci')
+#save_to_database(df, 'nat_epci_INAT', 'imhana')
 
 #df = process_niveau1_EPCI(variable = 'DIPLR')
-#save_to_database(df, f"nat_epci_{'DIPLR'.lower()}", 'imhana_epci')
+#save_to_database(df, f"nat_epci_{'DIPLR'.lower()}", 'imhana')
 #add_columns_to_nat_epci(df, 'DIPLR'.lower())
 
 # colonnes =  [ 'POSP', 'CATPR', 'IRANR',  'LTEXC', 'MODTRANS', 'AGER','STAT', 'STATCONJ', 'TACT', 'IMMI', 'LNAIE', 'ARRIVR']
 # for var in colonnes:
 #     df = process_niveau1_EPCI(variable = var)
-#     save_to_database(df, f"nat_epci_{var.lower()}", 'imhana_epci')
+#     save_to_database(df, f"nat_epci_{var.lower()}", 'imhana')
 #     add_columns_to_nat_epci(df, var.lower())
+
+
+
 
 #########################################################################
 #### Version 2 de la base en large (les nationalités en colonnes) mais uniquement Ensemble comme catégorie. 
@@ -658,28 +889,28 @@ for var in colonnes:
 ## Premiers dataframes (à faire, obligaoire !)
 
 """ df = process_NAT_EPCI_wide()
-save_to_database(df, 'nat_epci_wide', 'imhana_epci')
+save_to_database(df, 'nat_epci_wide', 'imhana')
 
 indicateurs = make_dico_variables('NAT2', df.indicateurMode.unique().tolist())
-save_to_database(indicateurs, 'indicateurs', 'imhana_epci') """
+save_to_database(indicateurs, 'indicateurs', 'imhana') """
 
 # A faire ensuite pour garder les indicateurs croisés
 """
-alter table imhana_epci.indicateurs add column code02 text;
-alter table imhana_epci.indicateurs add column modalite02 text;
-alter table imhana_epci.indicateurs add column libelle02 text;
+alter table imhana.indicateurs add column code02 text;
+alter table imhana.indicateurs add column modalite02 text;
+alter table imhana.indicateurs add column libelle02 text;
 
-alter table imhana_epci.indicateurs add column code03 text;
-alter table imhana_epci.indicateurs add column modalite03 text;
-alter table imhana_epci.indicateurs add column libelle03 text;
+alter table imhana.indicateurs add column code03 text;
+alter table imhana.indicateurs add column modalite03 text;
+alter table imhana.indicateurs add column libelle03 text;
 """
 
 ## Suivants dataframes
 """
 df = process_niveau1_EPCI_wide('SEXE')
-append_to_database(df, 'nat_epci_wide', 'imhana_epci')
+append_to_database(df, 'nat_epci_wide', 'imhana')
 indicateurs = make_dico_variables('SEXE', df.indicateurMode.unique().tolist())
-append_to_database(indicateurs, 'indicateurs', 'imhana_epci')
+append_to_database(indicateurs, 'indicateurs', 'imhana')
 
 
 colonnes =  [ 'DIPLR', 'POSP', 'CATPR', 'IRANR',  'LTEXC', 'MODTRANS', 'AGER','STAT', 'STATCONJ', 'TACT', 'IMMI', 'LNAIE', 'ARRIVR']
@@ -688,9 +919,9 @@ colonnes =  [ 'DIPLR', 'POSP', 'CATPR', 'IRANR',  'LTEXC', 'MODTRANS', 'AGER','S
 
 """ for var in colonnes:
     df = process_niveau1_EPCI_wide(var)
-    append_to_database(df, 'nat_epci_wide', 'imhana_epci')
+    append_to_database(df, 'nat_epci_wide', 'imhana')
     indicateurs = make_dico_variables(var, df.indicateurMode.unique().tolist())
-    append_to_database(indicateurs, 'indicateurs', 'imhana_epci') """
+    append_to_database(indicateurs, 'indicateurs', 'imhana') """
 
 
 #c:\Travail\Enseignement\Cours_M2_python\2025\Projet_INSEE\Insee\prepare_database.py:113: DtypeWarning: Columns (0) have mixed types. Specify dtype option on import or set low_memory=False.
@@ -699,10 +930,7 @@ colonnes =  [ 'DIPLR', 'POSP', 'CATPR', 'IRANR',  'LTEXC', 'MODTRANS', 'AGER','S
 # Test pour croisement sur indicateurs
 # indicateurs = make_dico_variables('SEXE_AGER', df.indicateurMode.unique().tolist())
 
-#################################################################################################################################
-# Logement - niveau 1
-#################################################################################################################################
-
+# Logement - niveau 1 
 
 # datapath = r"C:\Travail\MIGRINTER\Labo\IMHANA\Méthodologie\Statistiques\export_CASD_ergonomiques\\2026.01.22\EPCI\logement\\"
 # colonnes = ['ACHLR', 'HLML',  'INPER', 'INPOM', 'INPSM', 'NBPIR', 'NPER',  'STOCD', 'SURF', 'TYPL', 'VOIT' ]
@@ -712,9 +940,9 @@ colonnes =  [ 'DIPLR', 'POSP', 'CATPR', 'IRANR',  'LTEXC', 'MODTRANS', 'AGER','S
 #Fait
 """ for var in colonnes:
     df = process_niveau1_EPCI_wide(var)
-    append_to_database(df, 'nat_epci_wide', 'imhana_epci')
+    append_to_database(df, 'nat_epci_wide', 'imhana')
     indicateurs = make_dico_variables(var, df.indicateurMode.unique().tolist(), 'RP_logements_principale')
-    append_to_database(indicateurs, 'indicateurs', 'imhana_epci') """
+    append_to_database(indicateurs, 'indicateurs', 'imhana') """
     
 # niveau2 : AGER x [TYPL, STOCD] 
 

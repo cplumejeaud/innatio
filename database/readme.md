@@ -17,7 +17,7 @@ pg_dump: le dernier OID interne est 16383
 
 1. creer une BDD sous postgres (14 ou plus)
 2. Ajouter l'extension postgis
-3. Creer le schema imhana_epci
+3. Creer le schema imhana
 
 4. dump à restaurer avec pg_restore : https://www.postgresql.org/docs/14/backup-dump.html
 
