@@ -66,15 +66,5 @@ pg_dump: le dernier OID interne est 16383
 	et avec les résumés (Tous, etrangers, francaisParAcquisition, et immigres) compris dans NAT2, sans autre indicateur
 	La clé primaire : (unit,"NAT2","anneeRp")
 
-### nat_epci_wide : 
-	liste pour toutes les EPCI et pour les indicateurs et pour toutes les nationalités présentes (195) mais en ligne cette fois
-		les comptes de cette nationalité suivant la categorie ('Ensemble' uniquement pour l'instant)
-		- Ensemble : immigré ou pas, naturalisé ou pas
-		Liste des indicateurs intégrés : 
-		pour les individus [ 'SEXE', 'DIPLR', 'POSP', 'CATPR', 'IRANR',  'LTEXC', 'MODTRANS', 'AGER','STAT', 'STATCONJ', 'TACT', 'IMMI',  'ARRIVR']
-		pour les logements ['ACHLR', 'HLML',  'INPER', 'INPOM', 'INPSM', 'NBPIR', 'NPER',  'STOCD', 'SURF', 'TYPL', 'VOIT' ]
 
-	La clé primaire : 	(unit, indicateur,  categorie, "anneeRp")
-	alter table nat_epci_wide add CONSTRAINT nat_epci_wide_pk PRIMARY KEY (unit, indicateur,  categorie, "anneeRp");
-	L'indicateur contient la concaténation du code et de la modalité de l'indicateur séparé par un '.'
 
