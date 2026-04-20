@@ -14,11 +14,21 @@ import platform
 
 prgpath = '/home/cperreau/insee/database'
 datapath = "/home/cperreau/imhana/export_CASD_ergonomiques/2026.01.22/EPCI/"
+dbname = 'inseedb'
+dbuser = '*********'
+dbpassword = '**********'
+
 if platform.system() == 'Windows':
     prgpath = 'C:\Travail\Enseignement\Cours_M2_python\\2025\Projet_INSEE\Insee\database'
     datapath = r"C:\Travail\MIGRINTER\Labo\IMHANA\Méthodologie\Statistiques\export_CASD_ergonomiques\\2026.01.22\EPCI\\"
+    dbname = 'inseedb'
+    dbuser = 'postgres'
+    dbpassword = 'postgres'
 
 os.chdir(prgpath)
+
+connectString = f'postgresql://{dbuser}:{dbpassword}@localhost:5432/{dbname}'
+print(connectString)
 
 epcisuffix = "_EPCI_2026.01.22.csv"
 
@@ -39,8 +49,9 @@ print(doublons_CA_CU_EPCI)
 doublons_COM = pd.read_csv('doublons_COMMUNES.csv', sep=';', encoding='utf-8', dtype={'doublons_COMMUNES':str})['doublons_COMMUNES'].tolist()
 print(doublons_COM)
 
-
 CODESEP = '.' #séparateur entre le code et les modalité d'un indicateur (SEXE.Féminin par exemple)
+
+demographieCSVtype={"total_s": int, "unit": "string", "NOM": "string", "NAT2": "string"}
 
 
 
@@ -99,6 +110,8 @@ def process_INAT_EPCI():
     '''
     appelé par fusion_EPCI_NAT2 pour initialiser la table nat_epci_long
     '''
+    csvtype = demographieCSVtype
+    csvtype['INAT_BIS'] = 'string'
     nat_epci_file = datapath+"INAT_NAT"+epcisuffix
     demographie_etrangers = pd.read_csv(nat_epci_file, sep=';', encoding='latin1')
     demographie_etrangers['unit'] = demographie_etrangers['unit'].astype(str)
@@ -128,6 +141,7 @@ def process_GEN2_NAT_EPCI():
     '''
     appelé par fusion_EPCI_NAT2 pour initialiser la table nat_epci_long
     '''
+
     nat_epci_file = datapath+"GEN2_NAT"+epcisuffix
     demographie_etrangers = pd.read_csv(nat_epci_file, sep=';', encoding='latin1')
     demographie_etrangers['unit'] = demographie_etrangers['unit'].astype(str)
@@ -159,6 +173,7 @@ def process_IMMI_NAT_EPCI():
     '''
     appelé par fusion_EPCI_NAT2 pour initialiser la table nat_epci_long
     '''
+
     nat_epci_file = datapath+"IMMI_NAT"+epcisuffix
     demographie_etrangers = pd.read_csv(nat_epci_file, sep=';', encoding='latin1')
     demographie_etrangers['unit'] = demographie_etrangers['unit'].astype(str)
@@ -182,6 +197,8 @@ def process_IMMI_NAT_EPCI():
     return result
 
 def process_niveau1_EPCI_first(variable = 'SEXE'):
+    demographieCSVtype[variable] = 'string'
+    
     nat_epci_file = datapath+variable+"_NAT"+epcisuffix
     #nat_epci_file = r"C:\Travail\MIGRINTER\Labo\IMHANA\Méthodologie\Statistiques\export_CASD_ergonomiques\\2026.01.22\EPCI\NAT_EPCI_2026.01.22.csv"
 
@@ -209,7 +226,7 @@ def process_niveau1_EPCI_first(variable = 'SEXE'):
         liste_natio_adaptee = demographie_etrangers.query("NAT2 not in @nationalites_speciales").NAT2.unique().tolist()
         print(f"Nombre de nationalites {len(liste_natio_adaptee)} avec la variable {variable} ")
 
-    database = result.melt(id_vars=['unit', 'NOM', variable], value_vars=liste_natio_adaptee, var_name=['NAT2'], value_name='total_s')
+    database = result.melt(id_vars=['unit', 'NOM', variable], value_vars=liste_natio_adaptee, var_name='NAT2', value_name='total_s')
     database = database.astype(dtype = {'unit': 'string', 'NOM': 'string', 'NAT2': 'string', 'total_s': 'int'})
     database.rename(columns={variable : 'indicateurMode', 'total_s':'Ensemble'}, inplace=True)
     database['anneeRp']  = 2021
@@ -225,6 +242,9 @@ def process_niveau1_EPCI_first(variable = 'SEXE'):
     return database[['unit', 'NAT2', 'anneeRp', 'indicateur', 'indicateurCode', 'indicateurMode',  'Ensemble' ]]
     
 def process_niveau1_EPCI_correspondances(croix= 'GEN2', variable='SEXE') :
+    demographieCSVtype[variable] = 'string'
+
+    
     # variable = 'SEXE'
     # croix = 'GEN2'
     correspondances = {'INAT':'INAT_BIS', 'GEN2' : 'GENERATION2', 'IMMI' : 'IMMI'}
@@ -380,7 +400,7 @@ def process_niveau1_EPCI(variable = 'SEXE'):
     print(result)
     database = result
     #demographie_etrangers.query("unit == '248500191'").NAT2.unique().tolist() à la place liste_natio
-    database = result.melt(id_vars=['unit', 'NOM', variable], value_vars=liste_natio+nationalites_speciales, var_name=['NAT2'], value_name='total_s')
+    database = result.melt(id_vars=['unit', 'NOM', variable], value_vars=liste_natio+nationalites_speciales, var_name='NAT2', value_name='total_s')
     database = database.astype(dtype = {'unit': 'string', 'NOM': 'string', 'NAT2': 'string', 'total_s': 'int'})
 
     print(database.shape) #(243576, 4)
@@ -399,7 +419,7 @@ def process_niveau1_EPCI(variable = 'SEXE'):
 
 def save_to_database(df, table_name, schema_name='imhana'):
 
-    engine = create_engine('postgresql://postgres:postgres@localhost:5432/inseedb', connect_args={'options': '-csearch_path={}'.format('imhana,public')})
+    engine = create_engine(connectString, connect_args={'options': '-csearch_path={}'.format('imhana,public')})
     ORM_conn=engine.connect()
     df.to_sql(table_name, con=ORM_conn , schema=schema_name, if_exists='replace', index=False)
     ORM_conn.commit()
@@ -410,7 +430,7 @@ def save_to_database(df, table_name, schema_name='imhana'):
     # engine.dispose()
 
 def append_to_database(df, table_name, schema_name='imhana'):
-    engine = create_engine('postgresql://postgres:postgres@localhost:5432/inseedb', connect_args={'options': '-csearch_path={}'.format('imhana,public')})
+    engine = create_engine(connectString, connect_args={'options': '-csearch_path={}'.format('imhana,public')})
     df.to_sql(table_name, con=engine , schema=schema_name, if_exists='append', index=False)
     engine.dispose()
 
@@ -423,7 +443,7 @@ def add_columns_to_nat_epci(df, variable = 'sexe'):
     pour rajouter la colonne d'un indicateur sur une ligne correspondant à une nationalité
     DEPRECATED (repose sur l'existence de la table nat_epci qui décrit l'ensemble des indicateurs pour 'Ensemble')
     '''
-    engine = create_engine('postgresql://postgres:postgres@localhost:5432/inseedb', connect_args={'options': '-csearch_path={}'.format('imhana,public')})
+    engine = create_engine(connectString, connect_args={'options': '-csearch_path={}'.format('imhana,public')})
     ORM_conn=engine.connect()
     sql_query = ''
     attlist = []
@@ -553,6 +573,7 @@ def fusion_EPCI_niveau1(variable = 'SEXE') :
     basic_colonnes = ['unit', 'NAT2', 'anneeRp', 'indicateur', 'indicateurCode', 'indicateurMode', 'Ensemble', 'Etranger', 'Français par acquisition', 'Français de naissance', 'SecondeGeneration', 'Immigrés']
     #fusion = fusion[basic_colonnes + [col for col in fusion.columns if col not in basic_colonnes]]
     #append_to_database(fusion[basic_colonnes + [col for col in fusion.columns if col not in basic_colonnes]], 'fusion_epci', 'imhana')
+    
     append_to_database(fusion[basic_colonnes], 'nat_epci_long', 'imhana')
     
     
@@ -561,11 +582,13 @@ def summary_NAT_EPCI (variable=None):
     #epcisuffix = "_EPCI_2026.01.22.csv"
     #nationalites_speciales = ['Tous', 'etrangers', 'francaisParAcquisition', 'immigres']
     #EPCI_fictives = ['HORS__GFP', 'RESTANT__GFP', 'fictive_200027399', 'fictive_242320034', 'fictive_242320059', 'fictive_244701389']
+
     nat_epci_file = datapath+"NAT"+epcisuffix
 
     if variable :
         nat_epci_file = datapath+variable+"_NAT"+epcisuffix
-
+        demographieCSVtype[variable] = 'string'
+        
     demographie_etrangers = pd.read_csv(nat_epci_file, sep=';', encoding='latin1')
     demographie_etrangers['unit'] = demographie_etrangers['unit'].astype(str)
 
@@ -812,42 +835,26 @@ def summary_NAT_COM (variable=None):
 # décomposés en ligne suivant Ensemble, Etranger, Français par acquisition, Français de naissance, SecondeGénération, Immigrés
 #########################################################################
 
-""" 
-ici = 'faire la table nat_com_long'
-print(ici)
-fusion_COM_NAT2() #initialise la table nat_com_long de taille 416130 lignes
-
-
-datapath = r"C:\Travail\MIGRINTER\Labo\IMHANA\Méthodologie\Statistiques\export_CASD_ergonomiques\\2026.01.22\commune\\"
-epcisuffix = "_COM_2026.01.22.csv"
-
-ici = 'résumés des individus communes'
-print(ici)
-
-summary_NAT_COM()
-
 """
 ici = 'faire la table nat_epci_long'
 print(ici)
 
-fusion_EPCI_NAT2() #initialise la table nat_epci_long
-colonnes =  [ 'SEXE', 'DIPLR', 'POSP', 'CATPR', 'IRANR',  'LTEXC', 'MODTRANS', 'AGER','STAT', 'STATCONJ', 'TACT', 'IMMI',  'ARRIVR']
+#fusion_EPCI_NAT2() #initialise la table nat_epci_long
+summary_NAT_EPCI()
+"""
+
+ici = 'mettre à jour la table nat_epci_long'
+print(ici)
+
+#colonnes = [ 'SEXE']
+colonnes =  [ 'DIPLR', 'POSP', 'CATPR', 'IRANR',  'LTEXC', 'MODTRANS', 'AGER','STAT', 'STATCONJ', 'TACT', 'IMMI',  'ARRIVR']
 # mises de côté car beaucoup de modalités : 'LRANE', 'COMMUNE_RESIDANTER', 'NAT3', 'DEPT_NAIS', 'DENSITE7_RESID', 'DENSITE7_RESIDANTER', 'DENSITE7_TRAV', 'LTEXD' , 'LNAIE',
 for var in colonnes:
     #Ajoute les lignes pour l'indicateur dans nat_epci_long
-    df = fusion_EPCI_niveau1(variable = var)
-
-
-
-ici = 'résumés des individus'
-print(ici)
-
-summary_NAT_EPCI()
-colonnes =  [ 'SEXE', 'DIPLR', 'POSP', 'CATPR', 'IRANR',  'LTEXC', 'MODTRANS', 'AGER','STAT', 'STATCONJ', 'TACT', 'IMMI',  'ARRIVR']
-for var in colonnes:
+    fusion_EPCI_niveau1(variable = var)
     #Ajoute les lignes pour l'indicateur dans resumes_nat_epci_long
-    df = summary_NAT_EPCI(variable = var)
-
+    summary_NAT_EPCI(variable = var)
+    
 
 ici = 'ajouter les logements et leurs résumés'    
 print(ici)
@@ -864,7 +871,29 @@ for var in colonnes:
     fusion_EPCI_niveau1(variable = var)
     summary_NAT_EPCI(variable = var)
 
+
+### Les COMMUNES
+
+""" 
+if platform.system() == 'Windows':
+    datapath = r"C:\Travail\MIGRINTER\Labo\IMHANA\Méthodologie\Statistiques\export_CASD_ergonomiques\\2026.01.22\commune\\"
+else : 
+    datapath = '/home/cperreau/imhana/export_CASD_ergonomiques/2026.01.22/commune/'
+    
+#datapath = r"C:\Travail\MIGRINTER\Labo\IMHANA\Méthodologie\Statistiques\export_CASD_ergonomiques\\2026.01.22\commune\\"
+epcisuffix = "_COM_2026.01.22.csv"
+
+ici = 'faire la table nat_com_long'
+print(ici)
+fusion_COM_NAT2() #initialise la table nat_com_long de taille 416130 lignes
+
+ici = 'résumés des individus communes'
+print(ici)
+summary_NAT_COM()
+
 """
+
+
 ## DEPRECATED
 #df = process_niveau1_EPCI(variable = 'INAT')
 #save_to_database(df, 'nat_epci_INAT', 'imhana')
