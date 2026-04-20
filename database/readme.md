@@ -24,7 +24,7 @@ pg_dump: le dernier OID interne est 16383
 ### Contenu : tables sauvegardées 
 
 
-![Vue graphique des tables (produite avec DBEaver)](./inseedb%20-%20imhana2021.png "Diagramme des tables du schema imhana2021")
+![Vue graphique des tables (produite avec DBEaver)](./inseedb_imhana.png "Diagramme des tables du schema imhana2021")
 
 ### indicateurs :
 	Tous les indicateurs disponibles et croisées avec la nationalité des résidents (source RP 2021 sur CASD)
