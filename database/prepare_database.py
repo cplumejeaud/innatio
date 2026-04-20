@@ -15,8 +15,8 @@ import platform
 prgpath = '/home/cperreau/insee/database'
 datapath = "/home/cperreau/imhana/export_CASD_ergonomiques/2026.01.22/EPCI/"
 dbname = 'inseedb'
-dbuser = '*********'
-dbpassword = '**********'
+dbuser = '********'
+dbpassword = '*********'
 
 if platform.system() == 'Windows':
     prgpath = 'C:\Travail\Enseignement\Cours_M2_python\\2025\Projet_INSEE\Insee\database'
@@ -635,9 +635,10 @@ def summary_NAT_EPCI (variable=None):
 
     return  result
 
-def process_NAT_COM_first():
+def process_NAT_COM_first(variable = 'SEXE'):
     '''
     appelé par fusion_COM_NAT2 pour initialiser la table nat_com_long avec les totaux ('Ensemble') de nationalité par unité (les communes)
+    Elle peut être appelée ensuite pour calculer les totaux ('Ensemble') extraits pour une variable (SEXE par exemple), et par unité (communes) et par nationalités
     Doit être appelé en premier car définit les colonnes anneeRp, indicateur, indicateurCode, indicateurMode
     La nationalité NAT2 est recodée : elle prend pour valeur NAT (nationalité actuelle) ou NATN si l'individu a été naturalisé français. 
     Ce qui fait que les comptes Ensemble définissent la somme des personnes d'origine d'une nationalité, qu'ils soient encore de cette nationalité, ou bien aient été naturalisés français. 
@@ -646,13 +647,19 @@ def process_NAT_COM_first():
     #epcisuffix = "_COM_2026.01.22.csv"
 
     nat_epci_file = datapath+"NAT"+epcisuffix
+    if (variable) : 
+        nat_epci_file = datapath+variable+"_NAT"+epcisuffix
     #"C:\Travail\MIGRINTER\Labo\IMHANA\Méthodologie\Statistiques\export_CASD_ergonomiques\2026.01.22\commune\NAT_COM_2026.01.22.csv"
 
     demographie_etrangers = pd.read_csv(nat_epci_file, sep=';', encoding='latin1')
     demographie_etrangers['unit'] = demographie_etrangers['unit'].astype(str)
 
-    demo01 = demographie_etrangers.query("NAT2 not in @nationalites_speciales and not(unit in @doublons_COM) ").pivot(index=['unit', 'NOM'], columns='NAT2', values='total_s')
-    demo02 = demographie_etrangers.query("NAT2 not in @nationalites_speciales and (unit in @doublons_COM) ").pivot_table(index=['unit', 'NOM'], columns='NAT2', values='total_s',aggfunc="max") 
+    if variable : 
+        demo01 = demographie_etrangers.query("NAT2 not in @nationalites_speciales and not(unit in @doublons_COM) ").pivot(index=['unit', 'NOM', variable], columns='NAT2', values='total_s')
+        demo02 = demographie_etrangers.query("NAT2 not in @nationalites_speciales and (unit in @doublons_COM) ").pivot_table(index=['unit', 'NOM', variable], columns='NAT2', values='total_s',aggfunc="max") 
+    else :     
+        demo01 = demographie_etrangers.query("NAT2 not in @nationalites_speciales and not(unit in @doublons_COM) ").pivot(index=['unit', 'NOM'], columns='NAT2', values='total_s')
+        demo02 = demographie_etrangers.query("NAT2 not in @nationalites_speciales and (unit in @doublons_COM) ").pivot_table(index=['unit', 'NOM'], columns='NAT2', values='total_s',aggfunc="max") 
 
     frames = [demo01, demo02]
 
@@ -663,19 +670,30 @@ def process_NAT_COM_first():
 
     print(result.columns)
     print(result.shape) #(2132, 197)
-
-    database = result.melt(id_vars=['unit', 'NOM'], value_vars=liste_natio, var_name='NAT2', value_name='Ensemble')
+    
+    if variable : 
+        # renommer la colonne variable par indicateurMode 
+        result.rename(columns={variable : 'indicateurMode'}, inplace=True)
+        database = result.melt(id_vars=['unit', 'NOM', 'indicateurMode'], value_vars=result.columns[3:], var_name='NAT2', value_name='Ensemble')
+        database = database.astype(dtype = {'indicateurMode': 'string'})
+    else : 
+        database = result.melt(id_vars=['unit', 'NOM'], value_vars=result.columns[2:], var_name='NAT2', value_name='Ensemble')
+    
     database = database.astype(dtype = {'unit': 'string', 'NOM': 'string', 'NAT2': 'string', 'Ensemble': 'int'})
-
-    print(database.shape) #(416130, 4)
-    print(database.columns) #['unit', 'NOM', 'NAT2', 'Ensemble']
-
     database['anneeRp']  = 2021
-    database['indicateur']  = 'NAT2'+CODESEP
-    database['indicateurCode']  = 'NAT2'
-    database['indicateurMode']  = ''
-    #Retirer la colonne NOM
+    database['indicateurCode']  = variable if variable else 'NAT2'
+    
+    if variable :
+        database['indicateur'] = database['indicateurCode']+CODESEP+database['indicateurMode']
+    else : 
+        database['indicateurMode']  = ''
+        database['indicateur'] = database['indicateurCode']+CODESEP
+        
+    print(database.shape) #(413996, 6)
+    print(database.columns) #['unit', 'NOM', 'NAT2', 'Ensemble', 'anneeRp', 'indicateurCode', 'indicateurMode', 'indicateur']
+    #Retire le NOM
     return database[['unit', 'anneeRp', 'indicateur', 'indicateurCode', 'indicateurMode', 'NAT2', 'Ensemble']]
+
 
 def process_COM_correspondances(croix= 'GEN2', variable='SEXE') :
     # variable = 'SEXE'
@@ -742,19 +760,27 @@ def process_COM_correspondances(croix= 'GEN2', variable='SEXE') :
     return result
 
 
-def fusion_COM_NAT2() : 
+def fusion_COM_NAT2(variable = 'SEXE') : 
     '''
     Pour chaque unité, et chaque modalité de la variable passée en paramètre, on calcule les comptes par nationalité et par sous-ensembles :
     'Ensemble', 'Etranger', 'Français par acquisition', 'Français de naissance', 'SecondeGeneration', 'Immigrés'
-    On créé la table nat_com_long
+    On créé la table nat_com_long si variable is None (ce ne sont que les calculs par NAT2), 
+    et sinon on ajoute à cette table les valeurs calculées pour la variable
     '''
-    
-    df = process_NAT_COM_first()
-    df2 = process_COM_correspondances('INAT',None)
-    df3 = process_COM_correspondances('GEN2',None)
+    if variable : 
+        df = process_NAT_COM_first(variable)
+        df2 = process_COM_correspondances('INAT',variable)
+        df3 = process_COM_correspondances('GEN2',variable)
+        fusion = pd.merge(df, df2, on=['unit', 'NAT2', 'indicateurMode'], how='left') 
+        fusion = pd.merge(fusion, df3, on=['unit', 'NAT2', 'indicateurMode'], how='left') 
+    else : 
+        #Premier passage
+        df = process_NAT_COM_first(None)
+        df2 = process_COM_correspondances('INAT',None)
+        df3 = process_COM_correspondances('GEN2',None)
+        fusion = pd.merge(df, df2, on=['unit', 'NAT2'], how='left') 
+        fusion = pd.merge(fusion, df3, on=['unit', 'NAT2'], how='left') 
 
-    fusion = pd.merge(df, df2, on=['unit', 'NAT2'], how='left') 
-    fusion = pd.merge(fusion, df3, on=['unit', 'NAT2'], how='left') 
 
     fusion.fillna(0, inplace=True)
     print(f"Taille de fusion is {fusion.shape}")
@@ -773,7 +799,11 @@ def fusion_COM_NAT2() :
     basic_colonnes = ['unit', 'NAT2', 'anneeRp', 'indicateur', 'indicateurCode', 'indicateurMode', 'Ensemble', 'Etranger', 'Français par acquisition', 'Français de naissance', 'SecondeGeneration', 'Immigrés']
     #fusion = fusion[basic_colonnes + [col for col in fusion.columns if col not in basic_colonnes]]
     #save_to_database(fusion[basic_colonnes + [col for col in fusion.columns if col not in basic_colonnes]], 'fusion_epci', 'imhana')
-    save_to_database(fusion[basic_colonnes], 'nat_com_long', 'imhana')
+    if variable :
+        append_to_database(fusion[basic_colonnes], 'nat_com_long', 'imhana')
+    else : 
+        #On commence toujours la table par NAT2 comme indicateur
+        save_to_database(fusion[basic_colonnes], 'nat_com_long', 'imhana')
     
     
 def summary_NAT_COM (variable=None):
@@ -830,6 +860,8 @@ def summary_NAT_COM (variable=None):
 
     return  result
 
+
+
 #########################################################################
 #### Version 1 de la base en long (les nationalités dans la colonne NAT2, les indicateurs dans la colonne indicateur), 
 # décomposés en ligne suivant Ensemble, Etranger, Français par acquisition, Français de naissance, SecondeGénération, Immigrés
@@ -841,7 +873,6 @@ print(ici)
 
 #fusion_EPCI_NAT2() #initialise la table nat_epci_long
 summary_NAT_EPCI()
-"""
 
 ici = 'mettre à jour la table nat_epci_long'
 print(ici)
@@ -871,10 +902,11 @@ for var in colonnes:
     fusion_EPCI_niveau1(variable = var)
     summary_NAT_EPCI(variable = var)
 
+"""
 
 ### Les COMMUNES
 
-""" 
+
 if platform.system() == 'Windows':
     datapath = r"C:\Travail\MIGRINTER\Labo\IMHANA\Méthodologie\Statistiques\export_CASD_ergonomiques\\2026.01.22\commune\\"
 else : 
@@ -883,17 +915,45 @@ else :
 #datapath = r"C:\Travail\MIGRINTER\Labo\IMHANA\Méthodologie\Statistiques\export_CASD_ergonomiques\\2026.01.22\commune\\"
 epcisuffix = "_COM_2026.01.22.csv"
 
+
 ici = 'faire la table nat_com_long'
 print(ici)
-fusion_COM_NAT2() #initialise la table nat_com_long de taille 416130 lignes
+fusion_COM_NAT2(None) #initialise la table nat_com_long de taille 416130 lignes
 
 ici = 'résumés des individus communes'
 print(ici)
 summary_NAT_COM()
 
+
+
+ici = 'remplir la table nat_com_long avec toutes les variables, et faire leur résumé aussi'
+#colonnes = [ 'SEXE']
+colonnes =  [ 'SEXE', 'DIPLR', 'POSP', 'CATPR', 'IRANR',  'LTEXC', 'MODTRANS', 'AGER','STAT', 'STATCONJ', 'TACT', 'IMMI',  'ARRIVR']
+# mises de côté car beaucoup de modalités : 'LRANE', 'COMMUNE_RESIDANTER', 'NAT3', 'DEPT_NAIS', 'DENSITE7_RESID', 'DENSITE7_RESIDANTER', 'DENSITE7_TRAV', 'LTEXD' , 'LNAIE',
+for var in colonnes:
+    #Ajoute les lignes pour l'indicateur dans nat_epci_long
+    fusion_COM_NAT2(variable = var)
+    #Ajoute les lignes pour l'indicateur dans resumes_nat_epci_long
+    summary_NAT_COM(variable = var)
+
+ici = 'ajouter les logements et leurs résumés'    
+print(ici)
+
+if platform.system() == 'Windows':
+    datapath = r"C:\Travail\MIGRINTER\Labo\IMHANA\Méthodologie\Statistiques\export_CASD_ergonomiques\\2026.01.22\commune\logement\\"
+else : 
+    datapath = '/home/cperreau/imhana/export_CASD_ergonomiques/2026.01.22/commune/logement/'
+#datapath  = os.path.join(datapath, 'logement')
+
+colonnes = ['ACHLR', 'HLML',  'INPER', 'INPOM', 'INPSM', 'NBPIR', 'NPER',  'STOCD', 'SURF', 'TYPL', 'VOIT' ]
+# Rappel : Dina a recodé les variables INPER, INPOM, INPSM et NPER en 5 modalités : 0 pers, 1 pers, 2 pers, 3 pers, 4 pers, 5 pers ou plus.
+for var in colonnes:
+    #Ajoute les lignes pour l'indicateur dans nat_epci_long
+    fusion_COM_NAT2(variable = var)
+    #Ajoute les lignes pour l'indicateur dans resumes_nat_epci_long
+    summary_NAT_COM(variable = var)
+    
 """
-
-
 ## DEPRECATED
 #df = process_niveau1_EPCI(variable = 'INAT')
 #save_to_database(df, 'nat_epci_INAT', 'imhana')
@@ -908,7 +968,7 @@ summary_NAT_COM()
 #     save_to_database(df, f"nat_epci_{var.lower()}", 'imhana')
 #     add_columns_to_nat_epci(df, var.lower())
 
-
+"""
 
 
 #########################################################################
